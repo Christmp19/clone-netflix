@@ -91,7 +91,7 @@ function PlansSreen() {
             {Object.entries(products).map(([productId, productData]) => {
                 // TODO: add some logic to check if user's subscription is active...
                 const isCurrentPackage = productData.name
-                        ?.toLowerCase()
+                    ?.toLowerCase()
                     .includes(subscription?.role);
                 console.log("Is Current Package:", isCurrentPackage);
 
