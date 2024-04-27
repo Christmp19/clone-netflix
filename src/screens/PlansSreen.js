@@ -5,14 +5,32 @@ import { selectUser } from '../features/userSlice';
 import { useSelector } from 'react-redux';
 import { loadStripe } from '@stripe/stripe-js';
 
-
 function PlansSreen() {
     const [products, setProducts] = useState([]);
     const user = useSelector(selectUser);
+    const [subscription, setSubscription] = useState(null);
 
     useEffect(() => {
-        db.collection('products').where('active', '==', true)
-            .get().then(querySnapshot => {
+        db.collection('customers')
+            .doc(user.uid)
+            .collection('subscriptions')
+            .get()
+            .then(querySnapshot => {
+                querySnapshot.forEach(async subscription => {
+                    setSubscription({
+                        role: subscription.data().role,
+                        current_period_end: subscription.data().current_period_end.seconds,
+                        current_period_start: subscription.data().current_period_start.seconds,
+                    })
+                })
+            })
+    }, [user.uid]);
+
+    useEffect(() => {
+        db.collection('products')
+            .where('active', '==', true)
+            .get()
+            .then(querySnapshot => {
                 const products = {};
                 querySnapshot.forEach(async (productDoc) => {
                     products[productDoc.id] = productDoc.data();
@@ -29,6 +47,7 @@ function PlansSreen() {
     }, []);
 
     console.log(products);
+    console.log(subscription);
 
     const loadCheckout = async (priceId) => {
         const docRef = await db
@@ -62,16 +81,29 @@ function PlansSreen() {
 
     return (
         <div className='plansSreen'>
+            <br />
+            {subscription && (<p>
+                Renewal date:{' '}
+                {new Date(
+                    subscription?.current_period_end * 1000
+                ).toLocaleDateString()}
+            </p>)}
             {Object.entries(products).map(([productId, productData]) => {
                 // TODO: add some logic to check if user's subscription is active...
+                const isCurrentPackage = productData.name
+                        ?.toLowerCase()
+                    .includes(subscription?.role);
+                console.log("Is Current Package:", isCurrentPackage);
+
                 return (
-                    <div className='plansSreen_plan'>
+                    <div key={productId} className={`${isCurrentPackage && 'plansSreen_plan_disabled'} plansSreen_plan`}>
                         <div className='plansSreen_info'>
                             <h5>{productData.name}</h5>
                             <h6>{productData.description}</h6>
                         </div>
-                        <button onClick={() => loadCheckout(productData.prices.priceId)}>
-                            Subscribe
+                        <button onClick={() =>
+                            !isCurrentPackage && loadCheckout(productData.prices.priceId)}>
+                            {isCurrentPackage ? 'Current Package' : 'Subscribe'}
                         </button>
                     </div>
                 );

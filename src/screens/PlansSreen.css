@@ -1,7 +1,3 @@
-.plansSreen {
-
-}
-
 .plansSreen_plan {
     display: flex;
     justify-content: space-between;
@@ -21,4 +17,8 @@
     font-weight: 600;
     border: none;
     cursor: pointer;
+}
+
+.plansSreen_plan_disabled>button {
+    background-color: gray !important;
 }
